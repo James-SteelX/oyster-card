@@ -1,7 +1,8 @@
-class Journey
 require_relative 'oystercard'
 
-attr_reader :entry_station, :exit_station
+class Journey
+
+attr_accessor :entry_station, :exit_station
 
 PENALTY_FARE = 6
 DEFAULT_ENTRY = nil
@@ -29,5 +30,8 @@ DEFAULT_EXIT = nil
       PENALTY_FARE
       end
   end
-
 end
+
+=begin
+
+=end
