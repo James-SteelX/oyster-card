@@ -2,14 +2,15 @@ require 'station'
 
 describe Station do
 
-  subject {described_class.new("Wimbledon", 3)}
+  subject(:station) {described_class.new(:waterloo, 1)}
+  describe '#initalization' do
+    it 'should have a name' do
+      expect(station.name).to be :waterloo
+    end
 
-  it 'has a name' do
-    expect(subject.name).to eq "Wimbledon"
-  end
-
-  it 'has a zone' do
-    expect(subject.zone).to eq 3
+    it 'should have a zone' do
+      expect(station.zone).to be 1
+    end
   end
 
 end

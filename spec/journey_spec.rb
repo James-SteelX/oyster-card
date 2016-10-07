@@ -1,49 +1,24 @@
 require 'journey'
+require 'oystercard'
 
 describe Journey do
 
+  subject(:no_arguments) {described_class.new}
+  subject(:journey)      {described_class.new(:entry_station)}
+  let(:entry_station)    { double(:station, :zone=>1) }
+  let(:exit_station)     { double(:station, :zone=>2) }
+
   describe '#initialize' do
-
-    it 'has a default entry_station of nil' do
-      expect(subject.start).to eq nil
+    it 'sets entry station to nil if none given' do
+      expect(no_arguments.entry_station).to be nil
     end
 
-    it 'has a default exit_station of nil' do
-      expect(subject.finish).to eq nil
+    it 'has exit_station set to nil when initialized' do
+      expect(journey.exit_station).to be nil
     end
-  end
 
-  let(:card) { double(:oystercard, balance: 90) }
-
-  describe '#complete?' do
-    it 'returns true when complete journey' do
-      subject.start = 'Station X'
-      subject.finish = 'Station Y'
-      expect(subject).to be_complete
-    end
-    it 'returns false when not touched out' do
-      subject.start = 'Station X'
-      expect(subject).not_to be_complete
-    end
-    it 'returns false when not touched in' do
-      subject.finish = 'Station Y'
-      expect(subject).not_to be_complete
-    end
-  end
-
-  describe '#fare' do
-    it 'charges minimum fare for a complete journey' do
-      subject.start = 'Station X'
-      subject.finish = 'Station Y'
-      expect(subject.fare).to eq described_class::MINIMUM_FARE
-    end
-    it 'charges penalty fare when not touched out' do
-      subject.start = 'Station X'
-      expect(subject.fare).to eq described_class::PENALTY_FARE
-    end
-    it 'charges penalty fare when not touched in' do
-      subject.finish = 'Station Y'
-      expect(subject.fare).to eq described_class::PENALTY_FARE
+    it 'will set entry station when passed an argument' do
+      expect(journey.entry_station).to be :entry_station
     end
   end
 end

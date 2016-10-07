@@ -1,51 +1,43 @@
+
 require 'journey_log'
 
 describe JourneyLog do
 
-  subject do
-    JourneyLog.new("journey_class")
+  let(:complete_journey) {double(:journey, entry_station: :Liverpool, exit_station: :Waterloo )}
+  let(:bad_journey)      {double(:journey, entry_station: nil, exit_station: :Waterloo)}
+
+  describe '#initialize' do
+   it 'starts with an empty array' do
+     expect(subject.journey_history).to be_empty
+   end
   end
 
-  describe '#start' do
-    it { is_expected.to respond_to(:start).with(1).argument }
+  describe '#log' do
+   it 'should add a complete journey to the array' do
+     subject.log(complete_journey)
+     expect(subject.journey_history).to include complete_journey
+   end
 
-    it 'should start a new journey with an entry station' do
-      subject.start("A")
-      expect(subject.history.count).to eq 1
-    end
-    it 'starts a journey with a given destination' do
-      subject.start("A")
-      expect(subject.history.last.start).to eq "A"
-    end
-    it 'creates a new journey if you touch in twice' do
-      subject.start("A")
-      subject.start("B")
-      expect(subject.history.last.start).to eq "B"
-    end
+   it 'should add incomplete journeys to the array' do
+     subject.log(bad_journey)
+     expect(subject.journey_history).to include bad_journey
+   end
+
+   it 'should be able to add more than one journey' do
+     subject.log(bad_journey)
+     subject.log(complete_journey)
+     expect(subject.journey_history).to include(complete_journey, bad_journey)
+   end
   end
 
-  describe '#finish' do
-    it { is_expected.to respond_to(:finish).with(1).argument }
+  describe '#journey_history' do
+    it 'should return a copy of @journey_history' do
+      subject.log(bad_journey)
+      subject.log(complete_journey)
+      subject.journey_history.pop
+      expect(subject.journey_history).to include(complete_journey, bad_journey)
+    end
 
-    it 'should add information to an incomplete journey and not start a new one' do
-      subject.start("A")
-      subject.finish("B")
-      expect(subject.history.count).to eq 1
-    end
-    it 'completes a journey with a given destination' do
-      subject.start("A")
-      subject.finish("B")
-      expect(subject.history.last.finish).to eq "B"
-    end
-    it 'completes a journey with a given destination and retains origin' do
-      subject.start("A")
-      subject.finish("B")
-      expect(subject.history.last.start).to eq "A"
-    end
-    it 'creates a new journey if you touch out twice' do
-      subject.finish("A")
-      subject.finish("B")
-      expect(subject.history.last.finish).to eq "B"
-    end
   end
+
 end

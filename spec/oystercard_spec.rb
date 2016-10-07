@@ -1,108 +1,60 @@
 require 'oystercard'
-require 'journey'
 
 describe Oystercard do
 
-  let(:entry_station) {double(:station)}
-  let(:exit_station) {double(:station)}
+  let(:entry) { double(:station, name: :Central, zone: 1) }
+  let(:exit)  { double(:station, name: :Nowhere, zone: 1) }
+  let(:complete_journey) {double(:journey, entry_station: entry, exit_station: exit )}
 
-  journey = Journey.new("A", "B")
-
-  context 'With max balance on card' do
-    before do
-      subject.top_up(described_class::MAXIMUM_BALANCE)
-    end
-
-    it 'can not be topped up beyond limit' do
-      message = "Beyond limit of #{described_class::MAXIMUM_BALANCE}"
-      expect{subject.top_up(1)}.to raise_error message
+  describe '#initialize' do
+    it 'starts with a balance of 0' do
+      expect(subject.balance).to eq 0
     end
   end
 
   describe '#top_up' do
-    it { is_expected.to respond_to(:top_up).with(1).argument }
-
-    it 'can top up the balance' do
-      expect{ subject.top_up 1}.to change{ subject.balance }.by 1
+    it 'adds to balance' do
+      expect{ subject.top_up(10) }.to change{ subject.balance }.by(10)
     end
-  end
-
-  describe '#in_journey?' do
-    it { is_expected.to respond_to(:in_journey?) }
-
-    it 'new card not in_journey' do
-      expect(subject).not_to be_in_journey
+    it 'rases and error when exceding MAXIMUM_BALANCE' do
+      expect{ subject.top_up(described_class::MAXIMUM_BALANCE + 1) }.to raise_error("Beyond limit of #{described_class::MAXIMUM_BALANCE}")
     end
   end
 
   describe '#touch_in' do
-
-    it 'raises error when insufficient balance' do
-      expect{subject.touch_in(entry_station)}.to raise_error "Insufficient balance"
+    it 'accepts a station as an argument' do
+      expect(subject).to respond_to(:touch_in).with(1).argument
     end
-
-    it 'changes in_journey to true' do
+    it 'rases and error when funds low' do
+      expect{ subject.touch_in(entry) }.to raise_error('Insufficient balance')
+    end
+    it 'charges a penlty fare if touched in twice' do
       subject.top_up(described_class::MAXIMUM_BALANCE)
-      subject.touch_in(entry_station)
-      expect(subject).to be_in_journey
+      subject.touch_in(entry)
+      expect{ subject.touch_in(entry) }.to change{ subject.balance }.by(-6)
     end
-
-    it 'allows you to touch in twice, and creates a new journey for the second touch in' do
-      subject.top_up(described_class::MAXIMUM_BALANCE)
-      subject.touch_in(entry_station)
-      subject.touch_in(double(:station))
-      expect(subject.journey_history[-2].finish).to eq nil
-    end
-
   end
 
   describe '#touch_out' do
-
     before do
       subject.top_up(described_class::MAXIMUM_BALANCE)
-      subject.touch_in(entry_station)
-      subject.touch_out(exit_station)
     end
-
-    it 'deducts the penalty fare due to touching out twice' do
-      expect{ subject.touch_out(exit_station) }.to change{ subject.balance }.by (-Journey::PENALTY_FARE)
+    it 'charges MINIMUM_FARE on completion of valid journy' do
+      subject.touch_in(entry)
+      expect{ subject.touch_out(exit) }.to change{ subject.balance }.by(-1)
     end
-
-    it 'changes in_journey to false' do
-      expect(subject).not_to be_in_journey
-    end
-
-    it 'allows you to touch out twice, and creates a new journey for the second touch out' do
-      subject.touch_out(exit_station)
-      expect(subject.journey_history.last.start).to eq nil
-    end
-
-  end
-
-  describe '#journey_history' do
-    it 'records the entry station correctly' do
-      subject.top_up(described_class::MAXIMUM_BALANCE)
-      subject.touch_in("A")
-      subject.touch_out("B")
-      expect(subject.journey_history.last.start).to eq "A"
-    end
-    it 'records the exit station correctly' do
-      subject.top_up(described_class::MAXIMUM_BALANCE)
-      subject.touch_in("A")
-      subject.touch_out("B")
-      expect(subject.journey_history.last.finish).to eq "B"
+    it 'charges a penlty fare if touched out twice' do
+      subject.touch_out(entry)
+      expect{ subject.touch_out(exit) }.to change{ subject.balance }.by(-6)
     end
   end
 
-  describe '#initialize' do
-    it 'has empty list of journeys' do
-      expect(subject.journey_history).to be_empty
+  describe '#history' do
+    before do
+      subject.send(:log, complete_journey)
     end
-
-    it 'balance is zero' do
-      expect(subject.balance).to eq(0)
+    it 'should provide journey history' do
+      expect(subject.history).to include(complete_journey)
     end
-
   end
-
 end

@@ -1,61 +1,56 @@
-
 require_relative 'journey'
+require_relative 'journey_log'
+require_relative 'station'
+require_relative 'fare'
 
 class Oystercard
 
-  attr_reader :balance
-
   MAXIMUM_BALANCE = 90
 
-  def initialize
-    @balance = 0
-    @journeys = []
-  end
+ attr_reader :balance, :history
 
-  def top_up(money)
-    fail "Beyond limit of #{MAXIMUM_BALANCE}" if (balance + money) > MAXIMUM_BALANCE
-    @balance += money
-  end
+ def initialize
+   @balance = 0
+   @touch_in = false
+   @log = JourneyLog.new
+ end
 
-  def in_journey?
-    if @journeys.empty?
-      false
-    else
-      !@journey.complete?
-    end
-  end
+ def top_up(amount)
+   fail "Beyond limit of #{MAXIMUM_BALANCE}" if (balance + amount) > MAXIMUM_BALANCE
+   @balance += amount
+ end
 
-  def touch_in(entry_station)
-    touch_in_check
-    @journey = Journey.new(entry_station)
-    @journeys << @journey
-  end
+ def touch_in(station)
+   fail 'Insufficient balance' if balance < Fare::MINIMUM_FARE
+   deduct(fare) if @touch_in == true
+   @journey = Journey.new(station)
+   @touch_in = true
+ end
 
-  def touch_out(exit_station)
-    touch_out_check(exit_station)
-    @journey.finish = exit_station
-    deduct
-  end
+ def touch_out(exit_station)
+  @journey = Journey.new if @touch_in == false
+  @journey.exit_station = exit_station
+  deduct(fare)
+  @touch_in = false
+ end
 
-  def journey_history
-    @journeys
-  end
+ def history
+  @log.journey_history
+ end
 
-  private
+ private
 
-  def deduct
-    @balance -= @journey.fare
-  end
+ def fare
+   fare = Fare.new(@journey)
+   fare.fare(@journey)
+ end
 
-  def touch_in_check
-    fail 'Insufficient balance' if balance < Journey::MINIMUM_FARE
-    deduct if in_journey?
-  end
+ def deduct(amount)
+   @balance -= amount
+   log(@journey)
+ end
 
-  def touch_out_check(exit_station)
-    if !in_journey?
-      @journey = Journey.new(nil, exit_station)
-      @journeys << @journey
-    end
-  end
+ def log(journey)
+   @log.log(journey)
+ end
 end
