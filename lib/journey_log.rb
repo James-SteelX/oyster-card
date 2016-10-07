@@ -7,7 +7,7 @@ class JourneyLog
   end
 
   def log(journey)
-    @journey_history << journey
+    @journey_history << [journey]
   end
 
   def journey_history
